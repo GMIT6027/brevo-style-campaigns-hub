@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 
 interface Recipient {
   email: string;
@@ -17,6 +20,9 @@ interface MailTrackingTableProps {
 }
 
 const MailTrackingTable = ({ campaignName, recipients }: MailTrackingTableProps) => {
+  const [searchEmail, setSearchEmail] = useState('');
+  const [filteredRecipients, setFilteredRecipients] = useState<Recipient[]>(recipients);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Opened':
@@ -34,12 +40,40 @@ const MailTrackingTable = ({ campaignName, recipients }: MailTrackingTableProps)
     }
   };
 
+  const handleSearch = () => {
+    if (!searchEmail.trim()) {
+      setFilteredRecipients(recipients);
+      return;
+    }
+
+    const filtered = recipients.filter(recipient => 
+      recipient.email.toLowerCase().includes(searchEmail.toLowerCase())
+    );
+    setFilteredRecipients(filtered);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Email Tracking Details - {campaignName}</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="border rounded-md mb-6 p-4 bg-gray-50">
+          <div className="text-sm font-medium mb-2">Search by Email</div>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Enter email address..." 
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              className="max-w-md"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <Button onClick={handleSearch}>
+              <Search className="h-4 w-4 mr-2" /> Search
+            </Button>
+          </div>
+        </div>
+        
         <div className="border rounded-md mb-6 p-4 bg-gray-50">
           <div className="text-sm font-medium">Delivery Status</div>
           <div className="text-sm mt-1">
@@ -60,18 +94,26 @@ const MailTrackingTable = ({ campaignName, recipients }: MailTrackingTableProps)
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recipients.map((recipient, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="font-medium">{recipient.email}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(recipient.status)}>
-                      {recipient.status}
-                    </Badge>
+              {filteredRecipients.length > 0 ? (
+                filteredRecipients.map((recipient, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="font-medium">{recipient.email}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(recipient.status)}>
+                        {recipient.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{recipient.lastUpdated}</TableCell>
+                    <TableCell>{recipient.details}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+                    No matching records found.
                   </TableCell>
-                  <TableCell>{recipient.lastUpdated}</TableCell>
-                  <TableCell>{recipient.details}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
